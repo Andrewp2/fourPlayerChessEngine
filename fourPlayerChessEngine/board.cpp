@@ -1,5 +1,10 @@
 #include "board.h"
 
+#include <sstream>
+#include <regex>
+
+long nodesSearched = 0;
+
 unsigned char coordinate_to_index(std::string coordinate)
 {
 	if (coordinate.length() < 2) {
@@ -58,6 +63,7 @@ void Board::make_move(std::string from, std::string to)
 	unsigned char second = coordinate_to_index(to);
 	//TODO: handle castling stuff
 	ply++;
+	sideToMove = TEAM_NUMBER_TO_COLOR.at(ply);
 	this->squares[second].pieceType = this->squares[first].pieceType;
 	this->squares[first].pieceType = EMPTY;
 }
@@ -696,6 +702,7 @@ int Board::evaluate(int depth) {
 
 int Board::evaluate()
 {
+	nodesSearched++;
 	std::pair<char, char> friendlyTeam;
 	std::pair<char, char> enemyTeam;
 	char color = TEAM_NUMBER_TO_COLOR.at(ply % 4);
@@ -731,19 +738,13 @@ int Board::evaluate()
 	int rookDifference = find_difference_of_piece(friendlyTeam, enemyTeam, 'R');;
 	int bishopDifference = find_difference_of_piece(friendlyTeam, enemyTeam, 'B');;
 	int knightDifference = find_difference_of_piece(friendlyTeam, enemyTeam, 'N');;
-	int turn = (((ply % 2) * 2) - 1) * -1;
+	//int turn = (((ply % 2) * 2) - 1) * -1;
 
-	/*std::cout << std::to_string(moveDifference) << "\t" <<
-		std::to_string(kingDifference) << "\t" <<
-		std::to_string(queenDifference) << "\t" <<
-		std::to_string(pawnDifference) << "\t" <<
-		std::to_string(rookDifference) << "\t" <<
-		std::to_string(bishopDifference) << "\t" <<
-		std::to_string(knightDifference) << "\t" <<
-		std::to_string(turn) << std::endl;*/
+	std::cout << std::to_string(moveDifference) << std::endl;
 
-	return turn * (
+	return (
 		moveFactor * moveDifference +
+		kingFactor * kingDifference +
 		kingFactor * kingDifference +
 		queenFactor * queenDifference +
 		pawnFactor * pawnDifference +
@@ -859,6 +860,102 @@ int Board::alpha_beta_min(int alpha, int beta, int depthLeft) {
 	return beta;
 }
 
+void Board::parse_fen(std::vector<std::string> fen) {
+	if (fen.size() != 15) {
+		std::cerr << "Invalid FEN4 string" << std::endl;
+		return;
+	}
+	std::string first = fen[0];
+	auto re = std::regex(R"(-)");
+	auto const line = std::vector<std::string>(
+		std::sregex_token_iterator{ begin(first), end(first), re, -1 },
+		std::sregex_token_iterator{}
+	);
+	this->sideToMove = line[0][0];
+	//technically incorrect, but it'll have to do until we implement 50 move rule
+	re = std::regex(R"(,)");
+	auto vec = std::vector<std::string>(
+		std::sregex_token_iterator{ begin(line[1]), end(line[1]), re, -1 },
+		std::sregex_token_iterator{}
+	);
+	for (int i = 0; i < 4; ++i) {
+		//ignore players eliminated
+	}
+
+	std::vector<std::pair<bool, bool>> castling =
+	{ std::pair<bool, bool>(true, true), std::pair<bool, bool>(true, true), std::pair<bool, bool>(true, true), std::pair<bool, bool>(true, true) };
+	vec = std::vector<std::string>(
+		std::sregex_token_iterator{ begin(line[2]), end(line[2]), re, -1 },
+		std::sregex_token_iterator{}
+	);
+	for (int i = 0; i < 4; ++i) {
+		//kingside castling
+		int canCastle = std::stoi(vec[i]);
+		castling[i].first = (canCastle == 1);
+	}
+	vec = std::vector<std::string>(
+		std::sregex_token_iterator{ begin(line[3]), end(line[3]), re, -1 },
+		std::sregex_token_iterator{}
+	);
+	for (int i = 0; i < 4; ++i) {
+		//queenside castling
+		int canCastle = std::stoi(vec[i]);
+		castling[i].second = (canCastle == 1);
+	}
+	vec = std::vector<std::string>(
+		std::sregex_token_iterator{ begin(line[4]), end(line[4]), re, -1 },
+		std::sregex_token_iterator{}
+	);
+	for (int i = 0; i < 4; ++i) {
+		//ignore points
+	}
+	int consecutivePawnMoves = std::stoi(line[5]);
+	this->ply = TEAM_COLOR_TO_NUMBER.at(sideToMove);
+	re = std::regex(R"(,)");
+	int j = 0;
+	for (int i = 1; i < 15; ++i) {
+		vec = std::vector<std::string>(
+			std::sregex_token_iterator{ begin(fen[i]), end(fen[i]), re, -1 },
+			std::sregex_token_iterator{}
+		);
+		auto ptr = vec.begin();
+		while (ptr != vec.end()) {
+			if (ptr->back() == '\/') {
+				ptr->pop_back();
+			}
+			if (is_number(*ptr)) {
+				int skip = std::stoi(*ptr);
+				for (int k = 0; k < skip; ++k) {
+					this->squares[j].pieceType = EMPTY;
+					j++;
+				}
+			}
+			else {
+				std::string piece = *ptr;
+				char first = piece[0];
+				char second = piece[1];
+				first = toupper(first);
+				this->squares[j].pieceType = TEAM_COLOR_TO_NUMBER.at(first) * 6 + PIECE_LETTER_TO_NUMBER.at(second);
+				j++;
+			}
+			++ptr;
+		}
+	}
+	// remember to reset the corners to CORNR
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			this->squares[i * 14 + j].pieceType = CORNR;
+			this->squares[(13 - i) * 14 + j].pieceType = CORNR;
+			this->squares[i * 14 + (13 - j)].pieceType = CORNR;
+			this->squares[(13 - i) * 14 + (13 - j)].pieceType = CORNR;
+		}
+	}
+}
+
+bool is_number(const std::string& s) {
+	return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
+}
+
 char square_to_letter(Square s)
 {
 	//red blue yellow green
@@ -935,4 +1032,21 @@ std::ostream& operator<<(std::ostream& o, const Board& b)
 		o << square_to_letter(b.squares[i]);
 	}
 	return o;
+}
+
+//Order: Player to move, Player eliminated, Castling availability kingside, queenside, Points, number of consecutive non-pawn moves(used for 50 rule draw), 
+//piece placement from red's perspective.
+//Starts from 14th rank and goes back to first rank, each rank is described by comma separated line. Algebraic notation.
+//Takes in a FEN4 string and produces a board
+std::istream& operator>>(std::istream& input, Board& b) {
+	std::vector<std::string> full;
+	std::string line;
+	while (std::getline(input, line)) {
+		if (line.empty()) {
+			break;
+		}
+		full.push_back(line);
+	}
+	b.parse_fen(full);
+	return input;
 }

@@ -151,6 +151,10 @@
   <ItemGroup>
     <None Include="chess.glade" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="test_fen_one.txt" />
+    <Text Include="test_fen_two.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -41,4 +41,12 @@
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="test_fen_one.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="test_fen_two.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+  </ItemGroup>
 </Project>

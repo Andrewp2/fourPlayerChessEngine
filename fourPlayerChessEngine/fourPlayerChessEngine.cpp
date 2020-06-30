@@ -2,44 +2,43 @@
 //
 
 #include <iostream>
+#include <fstream>
 #include "board.h"
 #include "Test.h"
 
-#include <gtkmm.h>
+//#include <gtkmm.h>
 #include "fourPlayerChessEngine.h"
+
+extern long nodesSearched;
 
 int main(int argc, char *argv[])
 {
     Board board;
     board.initialize_board();
 
-    /*std::cout << "Begin evaluations" << std::endl;
-    for (int i = 0; i < 10; i++) {
-        std::cout << "\n" << "Depth: " << std::to_string(i) <<  " Evaluation: " << std::to_string((double)board.evaluate(i)/100.0) << std::endl;
-    }*/
+    std::ifstream file;
+    file.open("test_fen_one.txt");
+    file >> board;
+    std::cout << board << "\n\n";
+    file.close();
 
-    std::cout << "\n" << board << "\n";
-    print_out_coordinates();
-    //https://www.chess.com/4-player-chess?g=3930117-4
-    std::vector<std::string> moves = {
-        "h2", "h3",
-        "b9", "c9",
-        "g13", "g12",
-        "n5", "l6",
-        "g1" , "j4",
-        "b8" , "c8",
-        "h14", "e11",
-        "n10", "l9",
-        "k2", "k4",
-        "a5", "c4",
-        "e11", "d11",
-        "m8", "k8",
-        "j4", "f4",
-        "b10", "c10",
-        "d11", "l11",
-        "n7", "m8",
-        "f4", "a9" };
-    //check_moves_valid(board, moves);
+
+    file.open("test_fen_two.txt");
+    file >> board;
+    std::cout << board << "\n\n";
+    file.close();
+
+
+    /*::cout << "Begin evaluations" << std::endl;
+    for (int i = 0; i < 3; i++) {
+        std::cout << "\n" << "Depth: " << std::to_string(i) <<  " Evaluation: " << std::to_string((double)board.evaluate(i)/100.0) << std::endl;
+        std::cout << "\n" << "Number of nodes: " << nodesSearched << std::endl;
+        nodesSearched = 0;
+        std::cout << std::endl;
+    }*/
+    //std::cout << "\n" << board << "\n";
+    //print_out_coordinates();
+    //check_moves_valid(board, moves1);
     //print_out_all_moves(board);
 
 

@@ -47,13 +47,13 @@ constexpr unsigned char NUM_SQUARES = 196;
 constexpr std::pair<char, char> team1 = std::pair<char, char>('R', 'Y');
 constexpr std::pair<char, char> team2 = std::pair<char, char>('B', 'G');
 
-
 // K, Q, P, R, B, N * 4 = 24 pieces, plus 1 for empty square, plus 1 for non-accessible square
 struct Square
 {
 	unsigned char pieceType;
 };
 
+bool is_number(const std::string& s);
 char square_to_letter(Square s);
 
 unsigned char coordinate_to_index(std::string coordinate);
@@ -107,13 +107,17 @@ public:
 
 	bool in_check();
 
+	void parse_fen(std::vector<std::string> fen);
 
 private:
-	std::vector<std::pair<bool, bool>> castlingRights = {std::pair<bool, bool>(true, true), std::pair<bool, bool>(true, true), std::pair<bool, bool>(true, true), std::pair<bool, bool>(true, true) };
+	std::vector<std::pair<bool, bool>> castlingRights = 
+		{std::pair<bool, bool>(true, true), std::pair<bool, bool>(true, true), std::pair<bool, bool>(true, true), std::pair<bool, bool>(true, true) };
 	int alpha_beta_max(int alpha, int beta, int depthLeft);
 	int alpha_beta_min(int alpha, int beta, int depthLeft);
 	int ply = 0;
+	char sideToMove = 'R';
 	friend std::ostream& operator<<(std::ostream& o, const Board& b);
+	friend std::istream& operator>>(std::istream& input, Board& b);
 	std::array<Square, NUM_SQUARES> squares;
 };
 
